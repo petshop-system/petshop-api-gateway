@@ -36,7 +36,7 @@ func (h *ServeReverseProxyPass) ServeHTTP(w http.ResponseWriter, r *http.Request
 		"initialPath", initialPath, "request_id", requestID)
 	logger.Infow("request server pass received")
 
-	reverseProxy, err := h.buildReverseProxy(hostRedirect, appContext, r)
+	reverseProxy, err := h.buildReverseProxy(hostRedirect, appContext, requestID, r)
 	if err != nil {
 		h.LoggerSugar.Errorw("error to process url destination",
 			"host_redirect", hostRedirect)
@@ -48,7 +48,7 @@ func (h *ServeReverseProxyPass) ServeHTTP(w http.ResponseWriter, r *http.Request
 	logger.Infow("server pass done", "new_host", hostRedirect)
 }
 
-func (h *ServeReverseProxyPass) buildReverseProxy(hostRedirect, appContext string, r *http.Request) (*httputil.ReverseProxy, error) {
+func (h *ServeReverseProxyPass) buildReverseProxy(hostRedirect, appContext, requestID string, r *http.Request) (*httputil.ReverseProxy, error) {
 
 	destination, err := url.Parse(hostRedirect)
 	if err != nil {
@@ -68,11 +68,11 @@ func (h *ServeReverseProxyPass) buildReverseProxy(hostRedirect, appContext strin
 		//}
 		req.RequestURI = strings.ReplaceAll(r.RequestURI, "petshop-system", appContext)
 		req.URL.Path = strings.ReplaceAll(r.URL.Path, "petshop-system", appContext)
-		req.Header.Set("api-gateway", "true")
+		req.Header.Set("request_id", requestID)
 	}
 
 	rp.ModifyResponse = func(w *http.Response) error {
-		w.Header.Set("api-gateway", "true")
+		w.Header.Set("request_id", requestID)
 		return nil
 	}
 
