@@ -1,0 +1,14 @@
+{
+  "customer": {
+    "host": "http://petshop-api:5001",
+    "app-context": "petshop-api"
+  },
+  "address": {
+    "host": "http://petshop-api:5001",
+    "app-context": "petshop-api"
+  },
+  "employee": {
+    "host": "petshop-admin:5002",
+    "app-context": "petshop-admin"
+  }
+}
