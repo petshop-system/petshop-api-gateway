@@ -66,3 +66,10 @@ Ex.:
   }
 }
 ```
+
+## Material utilizado
+
+* [O que é API Gateway?](https://www.iugu.com/blog/api-gateway)
+* [How to Create a Reverse Proxy using Golang](https://www.codedodle.com/go-reverse-proxy-example.html)
+* [Go Simple and powerful reverse proxy](https://www.sobyte.net/post/2022-04/golang-reverse-proxy/)
+* [Why is httputil.NewSingleHostReverseProxy causing an error on some www sites?](https://stackoverflow.com/questions/31715545/why-is-httputil-newsinglehostreverseproxy-causing-an-error-on-some-www-sites)
