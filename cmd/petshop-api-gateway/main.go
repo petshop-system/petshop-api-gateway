@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/petshop-system/petshop-api-gateway/configuration/environment"
@@ -39,10 +41,17 @@ func main() {
 
 	contextPath := environment.Setting.Server.Context
 
+	http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "json/application")
+		w.WriteHeader(http.StatusOK)
+		body := new(bytes.Buffer)
+		json.NewEncoder(body).Encode(map[string]string{
+			"status": "OK",
+		})
+		w.Write(body.Bytes())
+	})
+
 	http.Handle("/", &serveReverseProxyPass)
-	//http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
-	//	fmt.Fprintln(w, "OK")
-	//})
 
 	loggerSugar.Infow("server started", "port", environment.Setting.Server.Port,
 		"contextPath", contextPath)

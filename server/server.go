@@ -1,11 +1,14 @@
 package server
 
 import (
+	"fmt"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type ServeReverseProxyPass struct {
@@ -27,9 +30,11 @@ func (h *ServeReverseProxyPass) ServeHTTP(w http.ResponseWriter, r *http.Request
 	partsPath := strings.Split(r.RequestURI, "/")
 	initialPath, hostRedirect, appContext := h.getRouterConfigInfo(partsPath)
 
-	h.LoggerSugar.Infow("request server pass received",
-		"host", r.Host, "request_uri", r.RequestURI, "request_url_path", r.URL.Path,
-		"initialPath", initialPath)
+	random, _ := uuid.NewRandom()
+	requestID := fmt.Sprintf("%s.%d", random.String(), time.Now().UnixNano())
+	logger := h.LoggerSugar.With("host", r.Host, "request_uri", r.RequestURI, "request_url_path", r.URL.Path,
+		"initialPath", initialPath, "request_id", requestID)
+	logger.Infow("request server pass received")
 
 	reverseProxy, err := h.buildReverseProxy(hostRedirect, appContext, r)
 	if err != nil {
@@ -40,9 +45,7 @@ func (h *ServeReverseProxyPass) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 
 	reverseProxy.ServeHTTP(w, r)
-	h.LoggerSugar.Infow("server pass successfully",
-		"new_host", hostRedirect, "new_request_uri", r.RequestURI)
-
+	logger.Infow("server pass done", "new_host", hostRedirect)
 }
 
 func (h *ServeReverseProxyPass) buildReverseProxy(hostRedirect, appContext string, r *http.Request) (*httputil.ReverseProxy, error) {
