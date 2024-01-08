@@ -27,7 +27,7 @@ func NewServerPass(loggerSugar *zap.SugaredLogger, fileName string) ServeReverse
 
 func (h *ServeReverseProxyPass) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
-	partsPath := strings.Split(r.RequestURI, "/")
+	partsPath := strings.Split(r.URL.Path, "/")
 	initialPath, hostRedirect, appContext := h.getRouterConfigInfo(partsPath)
 
 	random, _ := uuid.NewRandom()
@@ -36,7 +36,7 @@ func (h *ServeReverseProxyPass) ServeHTTP(w http.ResponseWriter, r *http.Request
 		"initialPath", initialPath, "request_id", requestID)
 	logger.Infow("request server pass received")
 
-	reverseProxy, err := h.buildReverseProxy(hostRedirect, appContext, requestID, r)
+	reverseProxy, newRequestURI, newURLPath, err := h.buildReverseProxy(hostRedirect, appContext, requestID, r)
 	if err != nil {
 		h.LoggerSugar.Errorw("error to process url destination",
 			"host_redirect", hostRedirect)
@@ -45,19 +45,24 @@ func (h *ServeReverseProxyPass) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 
 	reverseProxy.ServeHTTP(w, r)
-	logger.Infow("server pass done", "new_host", hostRedirect)
+	logger.Infow("server pass done", "new_host", hostRedirect,
+		"new_request_uri", newRequestURI, "new_url_path", newURLPath)
 }
 
-func (h *ServeReverseProxyPass) buildReverseProxy(hostRedirect, appContext, requestID string, r *http.Request) (*httputil.ReverseProxy, error) {
+func (h *ServeReverseProxyPass) buildReverseProxy(hostRedirect, appContext, requestID string, r *http.Request) (*httputil.ReverseProxy, string, string, error) {
 
-	destination, err := url.Parse(hostRedirect)
+	newRequestURI := strings.ReplaceAll(r.RequestURI, "petshop-system", appContext)
+	newURLPath := strings.ReplaceAll(r.URL.Path, "petshop-system", appContext)
+
+	destinationTo := fmt.Sprintf("%s%s", hostRedirect, newRequestURI)
+	destination, err := url.Parse(destinationTo)
 	if err != nil {
-		return nil, err
+		return nil, "", "", err
 	}
 
 	rp := httputil.NewSingleHostReverseProxy(destination)
 	rp.Director = func(req *http.Request) {
-		req.Host = hostRedirect
+		req.Host = destination.Host
 		req.URL.Scheme = destination.Scheme
 		req.URL.Host = destination.Host
 		//req.URL.Path = singleJoiningSlash(u.Path, req.URL.Path)
@@ -66,8 +71,9 @@ func (h *ServeReverseProxyPass) buildReverseProxy(hostRedirect, appContext, requ
 		//} else {
 		//	req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
 		//}
-		req.RequestURI = strings.ReplaceAll(r.RequestURI, "petshop-system", appContext)
-		req.URL.Path = strings.ReplaceAll(r.URL.Path, "petshop-system", appContext)
+
+		req.RequestURI = newRequestURI
+		req.URL.Path = destination.Path
 		req.Header.Set("request_id", requestID)
 	}
 
@@ -76,7 +82,7 @@ func (h *ServeReverseProxyPass) buildReverseProxy(hostRedirect, appContext, requ
 		return nil
 	}
 
-	return rp, nil
+	return rp, newRequestURI, newURLPath, nil
 }
 
 func (h *ServeReverseProxyPass) getRouterConfigInfo(partsPath []string) (string, string, string) {
