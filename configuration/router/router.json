@@ -1,15 +1,19 @@
 {
-  "customer": {
+  "address": {
     "host": "http://petshop-api:5001",
     "app-context": "petshop-api"
   },
-  "address": {
+  "customer": {
     "host": "http://petshop-api:5001",
     "app-context": "petshop-api"
   },
   "employee": {
     "host": "http://petshop-admin:5002",
     "app-context": "petshop-admin"
+  },
+  "available-appointments": {
+    "host": "https://demo2908199.mockable.io",
+    "app-context": "petshop-api"
   },
   "service": {
     "host": "https://demo2908199.mockable.io",
