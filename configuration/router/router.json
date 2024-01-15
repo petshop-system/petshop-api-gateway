@@ -3,10 +3,6 @@
     "host": "http://petshop-api:5001",
     "app-context": "petshop-api"
   },
-  "available-appointments": {
-    "host": "https://demo2908199.mockable.io",
-    "app-context": "petshop-api"
-  },
   "customer": {
     "host": "http://petshop-api:5001",
     "app-context": "petshop-api"
@@ -14,6 +10,10 @@
   "employee": {
     "host": "http://petshop-admin-api:5002",
     "app-context": "petshop-admin-api"
+  },
+  "schedule": {
+    "host": "https://demo2908199.mockable.io",
+    "app-context": "petshop-api"
   },
   "schedule-request": {
     "host": "http://petshop-message-api:5003",
