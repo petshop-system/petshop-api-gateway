@@ -9,7 +9,7 @@ RUN go get -d /app/cmd/petshop-api-gateway
 # rebuilt built in libraries and disabled cgo
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app /app/cmd/petshop-api-gateway
 # final stage
-FROM alpine:latest
+FROM alpine:3.19.1
 
 RUN apk update && apk add --no-cache librdkafka-dev pkgconf
 
