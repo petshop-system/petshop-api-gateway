@@ -10,6 +10,9 @@ RUN go get -d /app/cmd/petshop-api-gateway
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app /app/cmd/petshop-api-gateway
 # final stage
 FROM alpine:latest
+
+RUN apk update && apk add --no-cache librdkafka-dev pkgconf
+
 # working directory
 WORKDIR /app
 
