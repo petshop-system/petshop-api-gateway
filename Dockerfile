@@ -11,8 +11,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app /app/cmd/pet
 # final stage
 FROM alpine:3.19.1
 
-RUN apk update && apk add --no-cache librdkafka-dev pkgconf
-
 # working directory
 WORKDIR /app
 
