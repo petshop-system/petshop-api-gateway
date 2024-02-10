@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/petshop-system/petshop-api-gateway/configuration/db"
 	"github.com/petshop-system/petshop-api-gateway/configuration/environment"
 	"github.com/petshop-system/petshop-api-gateway/server"
+	database "github.com/petshop-system/petshop-api-gateway/server/db"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"net/http"
@@ -36,8 +38,12 @@ func init() {
 
 func main() {
 
-	fileName := environment.Setting.RouterConfig.FileName
-	serveReverseProxyPass := server.NewServerPass(loggerSugar, fileName)
+	postgresConnectionDB := db.NewPostgresDB(environment.Setting.Postgres.DBUser, environment.Setting.Postgres.DBPassword,
+		environment.Setting.Postgres.DBName, environment.Setting.Postgres.DBHost, environment.Setting.Postgres.DBPort, loggerSugar)
+
+	gatewayDB := database.NewGatewayDB(postgresConnectionDB, loggerSugar)
+
+	serveReverseProxyPass := server.NewServerPass(loggerSugar, gatewayDB)
 
 	contextPath := environment.Setting.Server.Context
 

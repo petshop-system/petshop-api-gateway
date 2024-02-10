@@ -26,5 +26,9 @@
   "test": {
     "host": "https://google.com",
     "app-context": ""
+  },
+  "bff-mobile-customer": {
+    "host": "http://petshop-bff-mobile:9997",
+    "app-context": "petshop-bff-mobile"
   }
 }

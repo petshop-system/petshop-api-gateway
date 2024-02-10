@@ -1,3 +1,28 @@
+create schema petshop_gateway
+
+    create table gateway
+    (
+        id serial not null
+            constraint petshop_api_gateway_pkey primary key,
+        router  varchar(255) not null,
+        configuration jsonb default '{"":""}'
+    )
+
+    create
+        unique index petshop_api_gateway_id_uindex
+        on gateway (id);
+
+INSERT INTO petshop_gateway.gateway (router, configuration)
+VALUES
+    ('address', '{"host": "http://petshop-api:5001", "app-context": "petshop-api"}'),
+    ('customer', '{"host": "http://petshop-api:5001", "app-context": "petshop-api"}'),
+    ('employee', '{"host": "http://petshop-admin-api:5002", "app-context": "petshop-admin-api"}'),
+    ('schedule', '{"host": "https://demo2908199.mockable.io", "app-context": "petshop-api"}'),
+    ('schedule-request', '{"host": "http://petshop-message-api:5003","app-context": "petshop-message-api"}'),
+    ('service', '{"host": "http://petshop-admin-api:5002", "app-context": "petshop-admin-api"}'),
+    ('bff-mobile-customer', '{"host": "http://petshop-bff-mobile:9997", "app-context": "petshop-bff-mobile"}');
+
+
 create schema petshop_api
 
 -- auto-generated definition
@@ -286,20 +311,26 @@ VALUES ('Brave Vacinador', 'FUNC-0003', 6, 1);
 
 -- service employee attention time
 
-INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract, fk_id_employee)
+INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract,
+                                                        fk_id_employee)
 VALUES (true, '9:00', '9:40', 1, 1, 1);
 
-INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract, fk_id_employee)
+INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract,
+                                                        fk_id_employee)
 VALUES (true, '10:00', '10:40', 1, 1, 1);
 
-INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract, fk_id_employee)
+INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract,
+                                                        fk_id_employee)
 VALUES (true, '11:00', '11:40', 2, 1, 1);
 
-INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract, fk_id_employee)
+INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract,
+                                                        fk_id_employee)
 VALUES (true, '10:00', '12:40', 2, 1, 2);
 
-INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract, fk_id_employee)
+INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract,
+                                                        fk_id_employee)
 VALUES (true, '13:00', '15:40', 2, 1, 2);
 
-INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract, fk_id_employee)
+INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract,
+                                                        fk_id_employee)
 VALUES (true, '8:00', '8:30', 3, 1, 3);

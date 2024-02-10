@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/google/uuid"
+	database "github.com/petshop-system/petshop-api-gateway/server/db"
 	"go.uber.org/zap"
 	"net/http"
 	"net/http/httputil"
@@ -16,13 +17,14 @@ type ServeReverseProxyPass struct {
 	RouterConfig map[string]map[string]string
 }
 
-func NewServerPass(loggerSugar *zap.SugaredLogger, fileName string) ServeReverseProxyPass {
-
-	config := LoadRouterConfig(fileName)
-	return ServeReverseProxyPass{
-		LoggerSugar:  loggerSugar,
-		RouterConfig: config,
+func NewServerPass(loggerSugar *zap.SugaredLogger, gatewayDB *database.GatewayDB) ServeReverseProxyPass {
+	serveReverseProxyPass := ServeReverseProxyPass{
+		LoggerSugar: loggerSugar,
 	}
+
+	serveReverseProxyPass.LoadRouterConfig(loggerSugar, gatewayDB)
+
+	return serveReverseProxyPass
 }
 
 func (h *ServeReverseProxyPass) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -92,4 +94,36 @@ func (h *ServeReverseProxyPass) getRouterConfigInfo(partsPath []string) (string,
 	appContext := h.RouterConfig[initialPath]["app-context"]
 
 	return initialPath, hostRedirect, appContext
+}
+
+func (h *ServeReverseProxyPass) LoadRouterConfig(loggerSugar *zap.SugaredLogger, gatewayDDB *database.GatewayDB) {
+
+	loadRoutersFunc := func() map[string]map[string]string {
+
+		routersDB := gatewayDDB.GetAllRouter()
+		routers := make(map[string]map[string]string, len(routersDB))
+
+		for _, router := range routersDB {
+
+			host, _ := GetMapValueFromJsonRawMessage[string](router.Configuration, "host")
+			appContext, _ := GetMapValueFromJsonRawMessage[string](router.Configuration, "app-context")
+			routers[router.Router] = map[string]string{
+				"host":        host.(string),
+				"app-context": appContext.(string),
+			}
+
+		}
+
+		loggerSugar.Infow("loaded routers", "routers", routers)
+		return routers
+	}
+
+	h.RouterConfig = loadRoutersFunc()
+
+	go func() {
+		for range time.Tick(1 * time.Minute) {
+			h.RouterConfig = loadRoutersFunc()
+		}
+	}()
+
 }
