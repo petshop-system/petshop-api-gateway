@@ -53,7 +53,7 @@ services:
 
   petshop-api:
     container_name: petshop-api
-    build: ../petshop-api/
+    build: ${PETSHOP_GO_FOLDER}/petshop-api/
     restart: always
     environment:
       - REDIS_ADDR=redis:6379
@@ -120,7 +120,7 @@ services:
 
   petshop-api-gateway:
     container_name: petshop-api-gateway
-    build: ../petshop-api-gateway
+    build: ${PETSHOP_GO_FOLDER}/petshop-api-gateway
     restart: always
     ports:
       - "9999:9999"
