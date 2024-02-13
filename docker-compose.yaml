@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   redis:
     image: redis
@@ -14,7 +15,7 @@ services:
     image: postgres
     restart: always
     environment:
-      - POSTGRES_USER=petshop-api
+      - POSTGRES_USER=petshop-system
       - POSTGRES_PASSWORD=test1234
       - POSTGRES_DB=petshop-system
     volumes:
@@ -24,73 +25,6 @@ services:
       - "5432:5432"
     expose:
       - "5432"
-    networks:
-      rede_local:
-
-  petshop-api:
-    container_name: petshop-api
-    build: ../petshop-api/
-    restart: always
-    environment:
-      - REDIS_ADDR=redis:6379
-      - DB_USER=petshop-api
-      - DB_PASSWORD=test1234
-      - DB_NAME=petshop-system
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_TYPE=postgres
-    ports:
-      - "5001:5001"
-    expose:
-      - "5001"
-    depends_on:
-      postgres:
-        condition: service_started
-      redis:
-        condition: service_started
-    networks:
-      rede_local:
-
-  petshop-admin-api:
-    container_name: petshop-admin-api
-    build: ../petshop-admin-api/
-    restart: always
-    environment:
-      - SPRING_PROFILE=docker
-      - REDIS_ADDR=redis:6379
-      - DB_USER=petshop-system
-      - DB_PASSWORD=test1234
-      - DB_NAME=petshop-system
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_TYPE=postgres
-    ports:
-      - "5002:5002"
-    expose:
-      - "5002"
-    depends_on:
-      postgres:
-        condition: service_started
-      redis:
-        condition: service_started
-    networks:
-      rede_local:
-
-  petshop-message-api:
-    container_name: petshop-message-api
-    build: ../petshop-message-api/
-    restart: always
-    environment:
-      - SPRING_PROFILE=docker
-    ports:
-      - "5003:5003"
-    expose:
-      - "5003"
-    depends_on:
-      kafka:
-        condition: service_started
-      zookeeper:
-        condition: service_started
     networks:
       rede_local:
 
@@ -117,20 +51,85 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+  petshop-api:
+    container_name: petshop-api
+    build: ${PETSHOP_GO_FOLDER}/petshop-api/
+    restart: always
+    environment:
+      - REDIS_ADDR=redis:6379
+      - DB_USER=petshop-system
+      - DB_PASSWORD=test1234
+      - DB_NAME=petshop-system
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_TYPE=postgres
+    ports:
+      - "5001:5001"
+    expose:
+      - "5001"
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      rede_local:
+
+  petshop-admin-api:
+    container_name: petshop-admin-api
+    build: ${DEV_ENV_FOLDER}/petshop-admin-api/
+    restart: always
+    environment:
+      - SPRING_PROFILE=docker
+      - REDIS_ADDR=redis:6379
+      - DB_USER=petshop-system
+      - DB_PASSWORD=test1234
+      - DB_NAME=petshop-system
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_TYPE=postgres
+    ports:
+      - "5002:5002"
+    expose:
+      - "5002"
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      rede_local:
+
+  petshop-message-api:
+    container_name: petshop-message-api
+    build: ${DEV_ENV_FOLDER}/petshop-message-api/
+    restart: always
+    environment:
+      - SPRING_PROFILE=docker
+    ports:
+      - "5003:5003"
+    expose:
+      - "5003"
+    depends_on:
+      kafka:
+        condition: service_started
+      zookeeper:
+        condition: service_started
+    networks:
+      rede_local:
+
   petshop-api-gateway:
     container_name: petshop-api-gateway
-    build: .
+    build: ${PETSHOP_GO_FOLDER}/petshop-api-gateway
     restart: always
     ports:
       - "9999:9999"
     expose:
       - "9999"
     depends_on:
-      petshop-api:
+      redis:
         condition: service_started
-      petshop-admin-api:
-        condition: service_started
-      petshop-message-api:
+      postgres:
         condition: service_started
     networks:
       rede_local:

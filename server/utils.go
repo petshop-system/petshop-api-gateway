@@ -38,3 +38,9 @@ func GetMockPath() string {
 	path = fmt.Sprintf("%s%s", path, "/configuration/router")
 	return path
 }
+
+func GetMapValueFromJsonRawMessage[T any](properties []byte, key string) (any, error) {
+	j := make(map[string]any)
+	err := json.Unmarshal(properties, &j)
+	return j[key], err
+}
