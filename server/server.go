@@ -14,15 +14,21 @@ import (
 
 type ServeReverseProxyPass struct {
 	LoggerSugar  *zap.SugaredLogger
-	RouterConfig map[string]map[string]string
+	RouterConfig map[string]Router
 }
 
-func NewServerPass(loggerSugar *zap.SugaredLogger, gatewayDB *database.GatewayDB) ServeReverseProxyPass {
+type Router struct {
+	Host                 string
+	ReplaceOldAppContext string
+	ReplaceNewAppContext string
+}
+
+func NewServerPass(loggerSugar *zap.SugaredLogger, gatewayDB *database.GatewayDB, tickerReloadRouters time.Duration) ServeReverseProxyPass {
 	serveReverseProxyPass := ServeReverseProxyPass{
 		LoggerSugar: loggerSugar,
 	}
 
-	serveReverseProxyPass.LoadRouterConfig(loggerSugar, gatewayDB)
+	serveReverseProxyPass.LoadRouterConfig(loggerSugar, gatewayDB, tickerReloadRouters)
 
 	return serveReverseProxyPass
 }
@@ -30,7 +36,7 @@ func NewServerPass(loggerSugar *zap.SugaredLogger, gatewayDB *database.GatewayDB
 func (h *ServeReverseProxyPass) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	partsPath := strings.Split(r.URL.Path, "/")
-	initialPath, hostRedirect, appContext := h.getRouterConfigInfo(partsPath)
+	initialPath, router := h.getRouterConfigInfo(partsPath)
 
 	random, _ := uuid.NewRandom()
 	requestID := fmt.Sprintf("%s.%d", random.String(), time.Now().UnixNano())
@@ -38,25 +44,25 @@ func (h *ServeReverseProxyPass) ServeHTTP(w http.ResponseWriter, r *http.Request
 		"initialPath", initialPath, "request_id", requestID)
 	logger.Infow("request server pass received")
 
-	reverseProxy, newRequestURI, newURLPath, err := h.buildReverseProxy(hostRedirect, appContext, requestID, r)
+	reverseProxy, newRequestURI, newURLPath, err := h.buildReverseProxy(requestID, r, router)
 	if err != nil {
 		h.LoggerSugar.Errorw("error to process url destination",
-			"host_redirect", hostRedirect)
+			"host_redirect", router.Host)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	reverseProxy.ServeHTTP(w, r)
-	logger.Infow("server pass done", "new_host", hostRedirect,
+	logger.Infow("server pass done", "new_host", router.Host,
 		"new_request_uri", newRequestURI, "new_url_path", newURLPath)
 }
 
-func (h *ServeReverseProxyPass) buildReverseProxy(hostRedirect, appContext, requestID string, r *http.Request) (*httputil.ReverseProxy, string, string, error) {
+func (h *ServeReverseProxyPass) buildReverseProxy(requestID string, r *http.Request, router Router) (*httputil.ReverseProxy, string, string, error) {
 
-	newRequestURI := strings.ReplaceAll(r.RequestURI, "petshop-system", appContext)
-	newURLPath := strings.ReplaceAll(r.URL.Path, "petshop-system", appContext)
+	newRequestURI := strings.ReplaceAll(r.RequestURI, router.ReplaceOldAppContext, router.ReplaceNewAppContext)
+	newURLPath := strings.ReplaceAll(r.URL.Path, router.ReplaceOldAppContext, router.ReplaceNewAppContext)
 
-	destinationTo := fmt.Sprintf("%s%s", hostRedirect, newRequestURI)
+	destinationTo := fmt.Sprintf("%s%s", router.Host, newRequestURI)
 	destination, err := url.Parse(destinationTo)
 	if err != nil {
 		return nil, "", "", err
@@ -87,29 +93,30 @@ func (h *ServeReverseProxyPass) buildReverseProxy(hostRedirect, appContext, requ
 	return rp, newRequestURI, newURLPath, nil
 }
 
-func (h *ServeReverseProxyPass) getRouterConfigInfo(partsPath []string) (string, string, string) {
-
+func (h *ServeReverseProxyPass) getRouterConfigInfo(partsPath []string) (string, Router) {
 	initialPath := partsPath[2]
-	hostRedirect := h.RouterConfig[initialPath]["host"]
-	appContext := h.RouterConfig[initialPath]["app-context"]
-
-	return initialPath, hostRedirect, appContext
+	router := h.RouterConfig[initialPath]
+	return initialPath, router
 }
 
-func (h *ServeReverseProxyPass) LoadRouterConfig(loggerSugar *zap.SugaredLogger, gatewayDDB *database.GatewayDB) {
+func (h *ServeReverseProxyPass) LoadRouterConfig(loggerSugar *zap.SugaredLogger, gatewayDDB *database.GatewayDB, tickerReloadRouters time.Duration) {
 
-	loadRoutersFunc := func() map[string]map[string]string {
+	loadRoutersFunc := func() map[string]Router {
 
 		routersDB := gatewayDDB.GetAllRouter()
-		routers := make(map[string]map[string]string, len(routersDB))
+		routers := make(map[string]Router, len(routersDB))
 
 		for _, router := range routersDB {
 
 			host, _ := GetMapValueFromJsonRawMessage[string](router.Configuration, "host")
-			appContext, _ := GetMapValueFromJsonRawMessage[string](router.Configuration, "app-context")
-			routers[router.Router] = map[string]string{
-				"host":        host.(string),
-				"app-context": appContext.(string),
+			//appContext, _ := GetMapValueFromJsonRawMessage[string](router.Configuration, "app-context")
+			replaceOldAppContext, _ := GetMapValueFromJsonRawMessage[string](router.Configuration, "replace-old-app-context")
+			replaceNewAppContext, _ := GetMapValueFromJsonRawMessage[string](router.Configuration, "replace-new-app-context")
+
+			routers[router.Router] = Router{
+				Host:                 host.(string),
+				ReplaceOldAppContext: replaceOldAppContext.(string),
+				ReplaceNewAppContext: replaceNewAppContext.(string),
 			}
 
 		}
@@ -121,7 +128,7 @@ func (h *ServeReverseProxyPass) LoadRouterConfig(loggerSugar *zap.SugaredLogger,
 	h.RouterConfig = loadRoutersFunc()
 
 	go func() {
-		for range time.Tick(1 * time.Minute) {
+		for range time.Tick(tickerReloadRouters) {
 			h.RouterConfig = loadRoutersFunc()
 		}
 	}()

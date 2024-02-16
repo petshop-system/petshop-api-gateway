@@ -4,7 +4,8 @@ import "time"
 
 type setting struct {
 	Application struct {
-		ContextRequest time.Duration `envconfig:"CONTEXT_REQUEST" default:"2.1s"`
+		ContextRequest      time.Duration `envconfig:"CONTEXT_REQUEST" default:"2.1s"`
+		TickerReloadRouters time.Duration `envconfig:"CONTEXT_REQUEST" default:"1m"`
 	}
 
 	Server struct {

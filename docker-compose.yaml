@@ -118,6 +118,24 @@ services:
     networks:
       rede_local:
 
+#  petshop-bff-desktop:
+#    container_name: petshop-message-api
+#    build: ${DEV_ENV_FOLDER}/petshop-bff-desktop
+#    restart: always
+#    environment:
+#      - SPRING_PROFILE=docker
+#    ports:
+#      - "9998:9998"
+#    expose:
+#      - "9998"
+#    depends_on:
+#      kafka:
+#        condition: service_started
+#      zookeeper:
+#        condition: service_started
+#    networks:
+#      rede_local:
+
   petshop-api-gateway:
     container_name: petshop-api-gateway
     build: ${PETSHOP_GO_FOLDER}/petshop-api-gateway

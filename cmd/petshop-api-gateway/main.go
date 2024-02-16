@@ -43,7 +43,7 @@ func main() {
 
 	gatewayDB := database.NewGatewayDB(postgresConnectionDB, loggerSugar)
 
-	serveReverseProxyPass := server.NewServerPass(loggerSugar, gatewayDB)
+	serveReverseProxyPass := server.NewServerPass(loggerSugar, gatewayDB, environment.Setting.Application.TickerReloadRouters)
 
 	contextPath := environment.Setting.Server.Context
 

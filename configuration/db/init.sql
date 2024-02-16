@@ -14,14 +14,15 @@ create schema petshop_gateway
 
 INSERT INTO petshop_gateway.gateway (router, configuration)
 VALUES
-    ('address', '{"host": "http://petshop-api:5001", "app-context": "petshop-api"}'),
-    ('customer', '{"host": "http://petshop-api:5001", "app-context": "petshop-api"}'),
-    ('employee', '{"host": "http://petshop-admin-api:5002", "app-context": "petshop-admin-api"}'),
-    ('schedule', '{"host": "https://demo2908199.mockable.io", "app-context": "petshop-api"}'),
-    ('schedule-request', '{"host": "http://petshop-message-api:5003","app-context": "petshop-message-api"}'),
-    ('service', '{"host": "http://petshop-admin-api:5002", "app-context": "petshop-admin-api"}'),
-    ('bff-mobile-customer', '{"host": "http://petshop-bff-mobile:9997", "app-context": "petshop-bff-mobile"}');
-
+    ('address', '{"host": "http://petshop-api:5001", "replace-old-app-context": "petshop-system", "replace-new-app-context": "petshop-api"}'),
+    ('customer', '{"host": "http://petshop-api:5001", "replace-old-app-context": "petshop-system", "replace-new-app-context": "petshop-api"}'),
+    ('employee', '{"host": "http://petshop-admin-api:5002", "replace-old-app-context": "petshop-system", "replace-new-app-context": "petshop-admin-api"}'),
+    ('schedule', '{"host": "https://demo2908199.mockable.io", "replace-old-app-context": "petshop-system", "replace-new-app-context": "petshop-api"}'),
+    ('schedule-request', '{"host": "http://petshop-message-api:5003", "replace-old-app-context": "petshop-system", "replace-new-app-context": "petshop-message-api"}'),
+    ('service', '{"host": "http://petshop-admin-api:5002", "replace-old-app-context": "petshop-system", "replace-new-app-context": "petshop-admin-api"}'),
+--     ('bff-mobile-customer', '{"host": "http://petshop-bff-mobile:9997", "app-context": "petshop-bff-mobile"}'),
+--     ('bff-desktop-customer', '{"host": "http://petshop-bff-desktop:9998", "app-context": "petshop-bff-desktop"}'),
+    ('bff-desktop-service', '{"host": "http://petshop-bff-desktop:9998", "replace-old-app-context": "petshop-system/bff-desktop-service", "replace-new-app-context": "petshop-bff-desktop"}');
 
 create schema petshop_api
 
@@ -187,7 +188,7 @@ create schema petshop_api
         id             serial       not null
             constraint petshop_api_service_employee_attention_time_pkey primary key,
         initial_time   varchar(255) not null,
-        final_time     varchar(255) not null,
+--         final_time     varchar(255) not null,
         active         bool         not null default false,
         fk_id_service  int          not null,
         fk_id_contract int          not null,
@@ -208,7 +209,7 @@ create schema petshop_api
         date_created                          timestamp             default timezone('BRT'::text, now()),
         date_declined                         timestamp,
         number                                varchar(255) not null, -- 2023dez10.000001
-        booking                               date         not null,
+        booked_at                             date         not null,
         price                                 decimal      not null default 0,
         fk_id_pet                             int          not null,
         fk_id_service_employee_attention_time int          not null,
@@ -269,16 +270,14 @@ VALUES ('900045678', '72', 'celular', 3);
 -- pet control
 
 INSERT INTO petshop_api.species (name)
-VALUES ('Canino');
-
-INSERT INTO petshop_api.species (name)
-VALUES ('Felino');
+VALUES ('Canino'), ('Felino');
 
 INSERT INTO petshop_api.breed (name, fk_id_species)
-VALUES ('Pastor Alemao', 1);
+VALUES ('Pastor Alemao', 1), ('Siames', 2);
 
 INSERT INTO petshop_api.pet (name, date_created, date_birthday, fk_id_customer, fk_id_breed, fk_id_contract)
-VALUES ('Rex', now(), to_date('12/12/2016', 'dd/MM/yyyy'), 1, 1, 1);
+VALUES ('Rex', now(), to_date('12/12/2016', 'dd/MM/yyyy'), 1, 1, 1),
+       ('Rex', now(), to_date('12/09/2023', 'dd/MM/yyyy'), 1, 2, 1);
 
 INSERT INTO petshop_api.service (name, price, active, fk_id_contract, description)
 VALUES ('TOSA', 50.65, true, 1, 'Tosa com tesoura.');
@@ -311,26 +310,67 @@ VALUES ('Brave Vacinador', 'FUNC-0003', 6, 1);
 
 -- service employee attention time
 
-INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract,
-                                                        fk_id_employee)
-VALUES (true, '9:00', '9:40', 1, 1, 1);
+INSERT INTO petshop_api.service_employee_attention_time(active, initial_time,  fk_id_service, fk_id_contract, fk_id_employee)
+VALUES (true, '9:00', 1, 1, 1),
+       (true, '9:00', 2, 1, 1),
+       (true, '10:00', 1, 1, 1),
+       (true, '11:00', 2, 1, 1),
+       (true, '10:00', 2, 1, 2),
+       (true, '13:00', 2, 1, 2),
+       (false, '8:00', 3, 1, 3);
 
-INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract,
-                                                        fk_id_employee)
-VALUES (true, '10:00', '10:40', 1, 1, 1);
+INSERT INTO petshop_api.schedule(date_created, number, booked_at, price, fk_id_pet, fk_id_service_employee_attention_time)
+VALUES (now(), '2024020001', now() + interval '1 day', 10.50, 1, 1),
+       (now(), '2024020002', now() + interval '1 day', 100.50, 2, 4);
 
-INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract,
-                                                        fk_id_employee)
-VALUES (true, '11:00', '11:40', 2, 1, 1);
 
-INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract,
-                                                        fk_id_employee)
-VALUES (true, '10:00', '12:40', 2, 1, 2);
+-- FUNCTIONS
 
-INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract,
-                                                        fk_id_employee)
-VALUES (true, '13:00', '15:40', 2, 1, 2);
+CREATE OR REPLACE FUNCTION petshop_api.GET_SERVICE_ATTENTION_AVAILABLE(P_DATE_SCHEDULE VARCHAR(12), P_SERVICE_ID INTEGER)
+    RETURNS TABLE
+            (
+                service_attention_id int,
+                service_attention_active bool,
+                service_attention_initial_time varchar(255),
+                service_attention_fk_id_service int,
+                service_attention_fk_id_contract int,
+                service_attention_fk_id_employee int
+            )
+    LANGUAGE plpgsql
+AS
+$$
+BEGIN
+    RETURN QUERY
+        select
+            service_attention.id::integer,
+            service_attention.active,
+            service_attention.initial_time,
+            service_attention.fk_id_service,
+            service_attention.fk_id_contract,
+            service_attention.fk_id_employee
+        from (select service_attention.*
+              from petshop_api.service_employee_attention_time service_attention
+              where 1 = 1
+                and service_attention.active = true
+                and not exists (select 1
+                                from petshop_api.schedule schedule
+                                where service_attention.id = schedule.fk_id_service_employee_attention_time
+                                  and schedule.booked_at = TO_DATE(P_DATE_SCHEDULE, 'YYYY-MM-DD')))
+                 service_attention -- getting all available services attention in order to schedules
+        where 1 = 1
+          and not exists( -- denying select
+            -- select to get employees with possibles appointments in the same hour
+            select 1 from petshop_api.schedule schedule
+                              inner join petshop_api.service_employee_attention_time seat
+                                         on schedule.fk_id_service_employee_attention_time = seat.id
+            where 1 = 1
+              and schedule.booked_at = TO_DATE(P_DATE_SCHEDULE, 'YYYY-MM-DD')
+              and service_attention.initial_time = seat.initial_time
+              and seat.fk_id_employee = service_attention.fk_id_employee
 
-INSERT INTO petshop_api.service_employee_attention_time(active, initial_time, final_time, fk_id_service, fk_id_contract,
-                                                        fk_id_employee)
-VALUES (true, '8:00', '8:30', 3, 1, 3);
+        )
+          and service_attention.fk_id_service = P_SERVICE_ID -- getting only service attention for specific service
+        order by cast(SPLIT_PART(initial_time, ':', 1) as INTEGER);
+end;
+$$
+
