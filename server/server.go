@@ -109,7 +109,6 @@ func (h *ServeReverseProxyPass) LoadRouterConfig(loggerSugar *zap.SugaredLogger,
 		for _, router := range routersDB {
 
 			host, _ := GetMapValueFromJsonRawMessage[string](router.Configuration, "host")
-			//appContext, _ := GetMapValueFromJsonRawMessage[string](router.Configuration, "app-context")
 			replaceOldAppContext, _ := GetMapValueFromJsonRawMessage[string](router.Configuration, "replace-old-app-context")
 			replaceNewAppContext, _ := GetMapValueFromJsonRawMessage[string](router.Configuration, "replace-new-app-context")
 

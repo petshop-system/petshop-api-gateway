@@ -7,14 +7,14 @@ import (
 	"gorm.io/gorm"
 )
 
-type GatewayDomain struct {
+type RouterDomain struct {
 	ID            int64           `gorm:"primaryKey, column:id"`
 	Router        string          `gorm:"column:router"`
 	Configuration json.RawMessage `gorm:"column:configuration" sql:"type:json"`
 }
 
-func (GatewayDomain) TableName() string {
-	return "petshop_gateway.gateway"
+func (RouterDomain) TableName() string {
+	return "petshop_gateway.router"
 }
 
 type GatewayDB struct {
@@ -29,9 +29,9 @@ func NewGatewayDB(db *gorm.DB, loggerSugar *zap.SugaredLogger) *GatewayDB {
 	}
 }
 
-func (gatewayDB *GatewayDB) GetAllRouter() []GatewayDomain {
+func (gatewayDB *GatewayDB) GetAllRouter() []RouterDomain {
 	ctx := context.Background()
-	var routers []GatewayDomain
+	var routers []RouterDomain
 	gatewayDB.DB.WithContext(ctx).Find(&routers)
 
 	return routers
