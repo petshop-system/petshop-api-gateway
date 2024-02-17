@@ -45,27 +45,53 @@ Ex.:
 
 ## Configurar redicionamentos
 
-Para configurar um novo host deve-se configurar a rota de redirecionamento 
-no arquivo _/configuration/router/router.json_.
+Para configurar um novo host deve-se configurar a rota de redirecionamento no banco de dados da aplicação,
+na tabela de rotas.
 
 Ex.:
 
+### Coluna
+
+* router: informa, de acordo com o path do request, qual configuração será utilizada;
+* configuration: configuração para realizar o redirecionamento do request:
+  * host: informa qual host será utilizado no redirecionamento do request;
+  * replace-old-app-context: informa qual parte do path será substituído no request;
+  * replace-new-app-context: informa pelo que será substiuído o path no request;
+
+Ex.: 
+
+**Address**
+
 ```
-{
-  "customer": {
-    "host": "http://petshop-api:5001",
-    "app-context": "petshop-api"
-  },
-  "address": {
-    "host": "http://petshop-api:5001",
-    "app-context": "petshop-api"
-  },
-  "employee": {
-    "host": "petshop-admin:5002",
-    "app-context": "petshop-admin"
-  }
-}
+'address', // router
+'{ // configuration
+    "host": "http://petshop-api:5001", 
+    "replace-old-app-context": "petshop-system", 
+    "replace-new-app-context": "petshop-api"
+}'
 ```
+
+**Employee**
+
+```
+'employee',  // router
+'{ // configuration
+    "host": "http://petshop-admin-api:5002", 
+    "replace-old-app-context": "petshop-system", 
+    "replace-new-app-context": "petshop-admin-api"
+}'
+```
+
+**BFF Desktop Service**
+
+````
+'bff-desktop-service', // router
+'{ // configuration
+    "host": "http://petshop-bff-desktop:9998", 
+    "replace-old-app-context": "petshop-system/bff-desktop-service", 
+    "replace-new-app-context": "petshop-bff-desktop"
+}'
+````
 
 ## Material utilizado
 
