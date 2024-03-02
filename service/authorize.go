@@ -21,11 +21,13 @@ func (authorize *Authorize) Execute(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		request, _ := http.NewRequest(http.MethodPost, "", r.Body)
-		cookie, _ := r.Cookie("petshop-authenticate")
+		cookie, _ := r.Cookie("petshop-authorize")
 		if cookie == nil || len(cookie.Value) == 0 {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+
+		request.AddCookie(cookie)
 
 		resp, err := authorize.ClientConnection.Do(request)
 		if err != nil {
