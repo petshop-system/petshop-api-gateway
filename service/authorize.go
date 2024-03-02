@@ -5,19 +5,19 @@ import (
 	"net/http"
 )
 
-type Authenticate struct {
+type Authorize struct {
 	LoggerSugar      *zap.SugaredLogger
 	ClientConnection *http.Client
 }
 
-func NewAuthenticate(loggerSugar *zap.SugaredLogger, clientConnection *http.Client) Authenticate {
-	return Authenticate{
+func NewAuthorize(loggerSugar *zap.SugaredLogger, clientConnection *http.Client) Authorize {
+	return Authorize{
 		LoggerSugar:      loggerSugar,
 		ClientConnection: clientConnection,
 	}
 }
 
-func (authenticate *Authenticate) Execute(next http.HandlerFunc) http.HandlerFunc {
+func (authorize *Authorize) Execute(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		request, _ := http.NewRequest(http.MethodPost, "", r.Body)
@@ -27,7 +27,7 @@ func (authenticate *Authenticate) Execute(next http.HandlerFunc) http.HandlerFun
 			return
 		}
 
-		resp, err := authenticate.ClientConnection.Do(request)
+		resp, err := authorize.ClientConnection.Do(request)
 		if err != nil {
 			w.WriteHeader(500)
 			return

@@ -10,6 +10,7 @@ import (
 	"github.com/petshop-system/petshop-api-gateway/server"
 	database "github.com/petshop-system/petshop-api-gateway/server/db"
 	"github.com/petshop-system/petshop-api-gateway/service"
+	"github.com/petshop-system/petshop-api-gateway/utils"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"net/http"
@@ -46,7 +47,7 @@ func main() {
 
 	serveReverseProxyPass := server.NewServerPass(loggerSugar, gatewayDB, environment.Setting.Application.TickerReloadRouters)
 
-	authenticate := service.NewAuthenticate(loggerSugar, service.DefaultClient())
+	authenticate := service.NewAuthorize(loggerSugar, utils.DefaultClient())
 
 	contextPath := environment.Setting.Server.Context
 
