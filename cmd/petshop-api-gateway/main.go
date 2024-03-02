@@ -9,6 +9,7 @@ import (
 	"github.com/petshop-system/petshop-api-gateway/configuration/environment"
 	"github.com/petshop-system/petshop-api-gateway/server"
 	database "github.com/petshop-system/petshop-api-gateway/server/db"
+	"github.com/petshop-system/petshop-api-gateway/service"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"net/http"
@@ -45,6 +46,8 @@ func main() {
 
 	serveReverseProxyPass := server.NewServerPass(loggerSugar, gatewayDB, environment.Setting.Application.TickerReloadRouters)
 
+	authenticate := service.NewAuthenticate(loggerSugar, service.DefaultClient())
+
 	contextPath := environment.Setting.Server.Context
 
 	http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +60,7 @@ func main() {
 		w.Write(body.Bytes())
 	})
 
-	http.Handle("/", &serveReverseProxyPass)
+	http.Handle("/", authenticate.Execute(serveReverseProxyPass.ServeHTTP))
 
 	loggerSugar.Infow("server started", "port", environment.Setting.Server.Port,
 		"contextPath", contextPath)
