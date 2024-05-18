@@ -22,11 +22,17 @@ type GatewayDB struct {
 	LoggerSugar *zap.SugaredLogger
 }
 
-func NewGatewayDB(db *gorm.DB, loggerSugar *zap.SugaredLogger) *GatewayDB {
-	return &GatewayDB{
-		DB:          db,
-		LoggerSugar: loggerSugar,
+type GatewayDBOption func(*GatewayDB)
+
+func NewGatewayDB(opts ...GatewayDBOption) *GatewayDB {
+
+	gdb := GatewayDB{}
+
+	for _, opt := range opts {
+		opt(&gdb)
 	}
+
+	return &gdb
 }
 
 func (gatewayDB *GatewayDB) GetAllRouter() []RouterDomain {
@@ -35,4 +41,16 @@ func (gatewayDB *GatewayDB) GetAllRouter() []RouterDomain {
 	gatewayDB.DB.WithContext(ctx).Find(&routers)
 
 	return routers
+}
+
+func WithDB(db *gorm.DB) GatewayDBOption {
+	return func(gdb *GatewayDB) {
+		gdb.DB = db
+	}
+}
+
+func WithLogger(loggerSugar *zap.SugaredLogger) GatewayDBOption {
+	return func(db *GatewayDB) {
+		db.LoggerSugar = loggerSugar
+	}
 }

@@ -41,7 +41,8 @@ func main() {
 	postgresConnectionDB := db.NewPostgresDB(environment.Setting.Postgres.DBUser, environment.Setting.Postgres.DBPassword,
 		environment.Setting.Postgres.DBName, environment.Setting.Postgres.DBHost, environment.Setting.Postgres.DBPort, loggerSugar)
 
-	gatewayDB := database.NewGatewayDB(postgresConnectionDB, loggerSugar)
+	//gatewayDB := database.NewGatewayDB(postgresConnectionDB, loggerSugar)
+	gatewayDB := database.NewGatewayDB(database.WithDB(postgresConnectionDB), database.WithLogger(loggerSugar))
 
 	serveReverseProxyPass := server.NewServerPass(loggerSugar, gatewayDB, environment.Setting.Application.TickerReloadRouters)
 
