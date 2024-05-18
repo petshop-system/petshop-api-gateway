@@ -43,13 +43,13 @@ func (gatewayDB *GatewayDB) GetAllRouter() []RouterDomain {
 	return routers
 }
 
-func WithDB(db *gorm.DB) GatewayDBOption {
+func GatewayDBWithDB(db *gorm.DB) GatewayDBOption {
 	return func(gdb *GatewayDB) {
 		gdb.DB = db
 	}
 }
 
-func WithLogger(loggerSugar *zap.SugaredLogger) GatewayDBOption {
+func GatewayDBWithLogger(loggerSugar *zap.SugaredLogger) GatewayDBOption {
 	return func(db *GatewayDB) {
 		db.LoggerSugar = loggerSugar
 	}
