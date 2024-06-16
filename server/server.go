@@ -40,7 +40,7 @@ func (h *ServeReverseProxyPass) ServeHTTP(w http.ResponseWriter, r *http.Request
 
 	random, _ := uuid.NewRandom()
 	requestID := fmt.Sprintf("%s.%d", random.String(), time.Now().UnixNano())
-	logger := h.LoggerSugar.With("host", r.Host, "request_uri", r.RequestURI, "request_url_path", r.URL.Path,
+	logger := h.LoggerSugar.With("host", r.Host, "request_method", r.Method, "request_uri", r.RequestURI, "request_url_path", r.URL.Path,
 		"initialPath", initialPath, "request_id", requestID)
 	logger.Infow("request server pass received")
 
@@ -73,6 +73,7 @@ func (h *ServeReverseProxyPass) buildReverseProxy(requestID string, r *http.Requ
 		req.Host = destination.Host
 		req.URL.Scheme = destination.Scheme
 		req.URL.Host = destination.Host
+		req.Method = r.Method
 		//req.URL.Path = singleJoiningSlash(u.Path, req.URL.Path)
 		//if targetQuery == "" || req.URL.RawQuery == "" {
 		//	req.URL.RawQuery = targetQuery + req.URL.RawQuery

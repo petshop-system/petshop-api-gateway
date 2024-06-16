@@ -1,56 +1,20 @@
-create schema petshop_gateway
-
-    create table router
-    (
-        id serial not null
-            constraint petshop_api_gateway_pkey primary key,
-        router  varchar(255) not null,
-        configuration jsonb default '{"":""}'
-    )
-
-    create
-        unique index petshop_api_gateway_id_uindex
-        on router (id);
-
-INSERT INTO petshop_gateway.router (router, configuration)
-VALUES
-    ('address', '{"host": "http://petshop-api:5001", "replace-old-app-context": "petshop-system", "replace-new-app-context": "petshop-api"}'),
-    ('customer', '{"host": "http://petshop-api:5001", "replace-old-app-context": "petshop-system", "replace-new-app-context": "petshop-api"}'),
-    ('employee', '{"host": "http://petshop-admin-api:5002", "replace-old-app-context": "petshop-system", "replace-new-app-context": "petshop-admin-api"}'),
-    ('schedule', '{"host": "https://demo2908199.mockable.io", "replace-old-app-context": "petshop-system", "replace-new-app-context": "petshop-api"}'),
-    ('schedule-request', '{"host": "http://petshop-message-api:5003", "replace-old-app-context": "petshop-system", "replace-new-app-context": "petshop-message-api"}'),
-    ('service', '{"host": "http://petshop-admin-api:5002", "replace-old-app-context": "petshop-system", "replace-new-app-context": "petshop-admin-api"}'),
-    ('bff-desktop-service', '{"host": "http://petshop-bff-desktop:9998", "replace-old-app-context": "petshop-system/bff-desktop-service", "replace-new-app-context": "petshop-bff-desktop"}');
-
+--- New Schema
 create schema petshop_api
 
 -- auto-generated definition
 
     create table address
     (
-        id     serial       not null
+        id      serial       not null
             constraint petshop_api_address_pkey primary key,
-        street varchar(255) not null,
-        number varchar(255) not null
+        zipcode varchar(255) not null,
+        street  varchar(255) not null,
+        number  varchar(255) not null
     )
 
     create
         unique index petshop_api_address_id_uindex
         on address (id)
-
-    create table person
-    (
-        id          serial       not null
-            constraint petshop_api_person_pkey primary key,
-        document    varchar(255) not null unique,
-        person_type varchar(255) not null,
-        CONSTRAINT chk_person_type_value
-            CHECK (person_type IN ('individual', 'legal'))
-    )
-
-    create
-        unique index petshop_api_person_id_uindex
-        on person (id)
 
     create table contract
     (
@@ -58,35 +22,64 @@ create schema petshop_api
             constraint petshop_api_contract_pkey primary key,
         name          varchar(255) not null,
         email         varchar(255) not null unique,
+        document      varchar(255) not null unique,
+        person_type   varchar(255) not null,
         date_created  timestamp default timezone('BRT'::text, now()),
         fk_id_address int          not null unique,
-        fk_id_person  int          not null unique,
         FOREIGN KEY (fk_id_address) references address (id),
-        FOREIGN KEY (fk_id_person) references person (id)
+        CONSTRAINT chk_person_type_value
+            CHECK (person_type IN ('individual', 'legal'))
     )
 
     create
         unique index petshop_api_contract_id_uindex
         on contract (id)
 
+    create
+        unique index petshop_api_contract_document_uindex
+        on contract (document)
+
     create table customer
     (
-        id             serial       not null
-            constraint petshop_api_customer_pkey primary key,
+        id             serial       not null unique ,
         name           varchar(255) not null,
-        email          varchar(255) not null unique,
-        date_created   timestamp default timezone('BRT'::text, now()),
+        email          varchar(255) not null,
+        document       varchar(255) not null,
+        person_type    varchar(255) not null,
         fk_id_address  int          not null unique,
-        fk_id_person   int          not null unique,
         fk_id_contract int          not null,
         FOREIGN KEY (fk_id_contract) references contract (id),
         FOREIGN KEY (fk_id_address) references address (id),
-        FOREIGN KEY (fk_id_person) references person (id)
+        constraint petshop_api_customer_pkey PRIMARY KEY (id, email, document, fk_id_contract),
+        CONSTRAINT chk_customer_person_type_value
+            CHECK (person_type IN ('individual', 'legal'))
     )
 
     create
         unique index petshop_api_customer_id_uindex
         on customer (id)
+
+    create
+        index petshop_api_customer_email_uindex
+        on customer (email)
+
+    create
+        index petshop_api_customer_document_uindex
+        on customer (document)
+
+    create table customer_history
+    (
+        id serial not null
+            constraint petshop_api_customer_history_pkey primary key,
+        fk_id_customer int          not null,
+        date   timestamp default timezone('BRT'::text, now()),
+        description varchar(255) not null,
+        FOREIGN KEY (fk_id_customer) references customer (id)
+    )
+
+    create
+        index petshop_api_customer_history_fk_id_customer_uindex
+        on customer_history (fk_id_customer)
 
     create table phone
     (
@@ -95,8 +88,10 @@ create schema petshop_api
         number       varchar(255) not null,
         code_area    varchar(255) not null,
         phone_type   varchar(255) not null,
-        fk_id_person int          not null,
-        FOREIGN KEY (fk_id_person) references person (id)
+        fk_id_user  int          not null,
+        user_type   varchar(255) not null,
+        CONSTRAINT chk_phone_user_type_value
+            CHECK (user_type IN ('contract', 'customer', 'employee'))
     )
 
     create
@@ -147,6 +142,10 @@ create schema petshop_api
         unique index petshop_api_pet_id_uindex
         on pet (id)
 
+    create
+        index petshop_api_pet_fk_id_customer_uindex
+        on pet (fk_id_customer)
+
     create table service
     (
         id             serial       not null
@@ -165,21 +164,28 @@ create schema petshop_api
 
     create table employee
     (
-        id             serial       not null
-            constraint petshop_api_employee_pkey primary key,
+        id             serial       not null unique,
         name           varchar(255) not null,
         register       varchar(255) not null unique,
+        document       varchar(255) not null unique,
         date_created   timestamp             default timezone('BRT'::text, now()),
         active         bool         not null default true,
-        fk_id_person   int          not null,
         fk_id_contract int          not null,
         FOREIGN KEY (fk_id_contract) references contract (id),
-        FOREIGN KEY (fk_id_person) references person (id)
+        constraint petshop_api_employee_pkey PRIMARY KEY (id, document, fk_id_contract)
     )
 
     create
         unique index petshop_api_employee_id_uindex
         on employee (id)
+
+    create
+        unique index petshop_api_employee_register_uindex
+        on employee (register)
+
+    create
+        unique index petshop_api_employee_document_uindex
+        on employee (document)
 
     create table service_employee_attention_time
     (
@@ -225,45 +231,35 @@ create schema petshop_api
 -- Create default inserts
 
 -- contract
-INSERT INTO petshop_api.person (document, person_type)
-VALUES ('38988657000181', 'legal');
+INSERT INTO petshop_api.address (street, number, zipcode)
+VALUES ('Rua Jose Bonifácio', 1432, '00000000');
 
-INSERT INTO petshop_api.address (street, number)
-VALUES ('Rua Jose Bonifácio', 1432);
+INSERT INTO petshop_api.contract (name, email, date_created, fk_id_address, document, person_type)
+VALUES ('petshop juiz de fora', 'pet_jf@gmail.com', now(), 1, '38988657000181', 'legal');
 
-INSERT INTO petshop_api.contract (name, email, date_created, fk_id_address, fk_id_person)
-VALUES ('petshop juiz de fora', 'pet_jf@gmail.com', now(), 1, 1);
-
-INSERT INTO petshop_api.phone (number, code_area, phone_type, fk_id_person)
-VALUES ('912345674', '72', 'celular', 1);
+INSERT INTO petshop_api.phone (number, code_area, phone_type, fk_id_user, user_type)
+VALUES ('912345674', '72', 'celular', 1, 'contract');
 
 -- first customer
+INSERT INTO petshop_api.address (street, number, zipcode)
+VALUES ('Rua Lechitz', 11, '00000000');
 
-INSERT INTO petshop_api.person (document, person_type)
-VALUES ('22233344409', 'individual');
+INSERT INTO petshop_api.customer (name, fk_id_address, email,  fk_id_contract, document, person_type)
+VALUES ('siclano', 2, 'siclano@gmail.com', 1, '22233344409', 'individual');
 
-INSERT INTO petshop_api.address (street, number)
-VALUES ('Rua Lechitz', 11);
-
-INSERT INTO petshop_api.customer (name, fk_id_address, email, date_created, fk_id_person, fk_id_contract)
-VALUES ('siclano', 2, 'siclano@gmail.com', now(), 2, 1);
-
-INSERT INTO petshop_api.phone (number, code_area, phone_type, fk_id_person)
-VALUES ('912345000', '72', 'celular', 2);
+INSERT INTO petshop_api.phone (number, code_area, phone_type, fk_id_user, user_type)
+VALUES ('912345000', '72', 'celular', 1, 'customer');
 
 -- second customer
 
-INSERT INTO petshop_api.address (street, number)
-VALUES ('Av. Juiz de Fora', 1001);
+INSERT INTO petshop_api.address (street, number, zipcode)
+VALUES ('Av. Juiz de Fora', 1001, '00000000');
 
-INSERT INTO petshop_api.person (document, person_type)
-VALUES ('38988657000182', 'legal');
+INSERT INTO petshop_api.customer (name, fk_id_address, email, fk_id_contract, document, person_type)
+VALUES ('testando cnpj', 3, 'company@gmail.com', 1, '38988657000182', 'legal');
 
-INSERT INTO petshop_api.customer (name, fk_id_address, email, date_created, fk_id_person, fk_id_contract)
-VALUES ('testando cnpj', 3, 'company@gmail.com', now(), 3, 1);
-
-INSERT INTO petshop_api.phone (number, code_area, phone_type, fk_id_person)
-VALUES ('900045678', '72', 'celular', 3);
+INSERT INTO petshop_api.phone (number, code_area, phone_type, fk_id_user, user_type)
+VALUES ('900045678', '72', 'celular', 2, 'customer');
 
 -- pet control
 
@@ -288,23 +284,14 @@ VALUES ('VACINA ANTIRRABICA', 112.70, true, 1, 'Vacina antirrabica para cachorro
 
 -- Employee
 
-INSERT INTO petshop_api.person(document, person_type)
-VALUES ('63609931043', 'individual');
+INSERT INTO petshop_api.employee(name, register, fk_id_contract, document)
+VALUES ('Fulana da Silva Sauro', 'FUNC-0001', 1, '63609931043');
 
-INSERT INTO petshop_api.employee(name, register, fk_id_person, fk_id_contract)
-VALUES ('Fulana da Silva Sauro', 'FUNC-0001', 4, 1);
+INSERT INTO petshop_api.employee(name, register, fk_id_contract, document)
+VALUES ('Ciclano da Silva Sauro', 'FUNC-0002', 1, '56689159051');
 
-INSERT INTO petshop_api.person(document, person_type)
-VALUES ('56689159051', 'individual');
-
-INSERT INTO petshop_api.employee(name, register, fk_id_person, fk_id_contract)
-VALUES ('Ciclano da Silva Sauro', 'FUNC-0002', 5, 1);
-
-INSERT INTO petshop_api.person(document, person_type)
-VALUES ('05740847036', 'individual');
-
-INSERT INTO petshop_api.employee(name, register, fk_id_person, fk_id_contract)
-VALUES ('Brave Vacinador', 'FUNC-0003', 6, 1);
+INSERT INTO petshop_api.employee(name, register, fk_id_contract, document)
+VALUES ('Brave Vacinador', 'FUNC-0003', 1, '05740847036');
 
 -- service employee attention time
 
@@ -338,36 +325,36 @@ CREATE OR REPLACE FUNCTION petshop_api.GET_SERVICE_ATTENTION_AVAILABLE(P_DATE_SC
 AS
 $$
 BEGIN
-    RETURN QUERY
-        select
-            service_attention.id::integer,
-            service_attention.active,
-            service_attention.initial_time,
-            service_attention.fk_id_service,
-            service_attention.fk_id_contract,
-            service_attention.fk_id_employee
-        from (select service_attention.*
-              from petshop_api.service_employee_attention_time service_attention
-              where 1 = 1
-                and service_attention.active = true
-                and not exists (select 1
-                                from petshop_api.schedule schedule
-                                where service_attention.id = schedule.fk_id_service_employee_attention_time
-                                  and schedule.booked_at = TO_DATE(P_DATE_SCHEDULE, 'YYYY-MM-DD')))
-                 service_attention -- getting all available services attention in order to schedules
-        where 1 = 1
-          and not exists( -- denying select
-            -- select to get employees with possibles appointments in the same hour
-            select 1 from petshop_api.schedule schedule
-                              inner join petshop_api.service_employee_attention_time seat
-                                         on schedule.fk_id_service_employee_attention_time = seat.id
-            where 1 = 1
-              and schedule.booked_at = TO_DATE(P_DATE_SCHEDULE, 'YYYY-MM-DD')
-              and service_attention.initial_time = seat.initial_time
-              and seat.fk_id_employee = service_attention.fk_id_employee
+RETURN QUERY
+select
+    service_attention.id::integer,
+        service_attention.active,
+    service_attention.initial_time,
+    service_attention.fk_id_service,
+    service_attention.fk_id_contract,
+    service_attention.fk_id_employee
+from (select service_attention.*
+      from petshop_api.service_employee_attention_time service_attention
+      where 1 = 1
+        and service_attention.active = true
+        and not exists (select 1
+                        from petshop_api.schedule schedule
+                        where service_attention.id = schedule.fk_id_service_employee_attention_time
+                          and schedule.booked_at = TO_DATE(P_DATE_SCHEDULE, 'YYYY-MM-DD')))
+         service_attention -- getting all available services attention in order to schedules
+where 1 = 1
+  and not exists( -- denying select
+    -- select to get employees with possibles appointments in the same hour
+    select 1 from petshop_api.schedule schedule
+                      inner join petshop_api.service_employee_attention_time seat
+                                 on schedule.fk_id_service_employee_attention_time = seat.id
+    where 1 = 1
+      and schedule.booked_at = TO_DATE(P_DATE_SCHEDULE, 'YYYY-MM-DD')
+      and service_attention.initial_time = seat.initial_time
+      and seat.fk_id_employee = service_attention.fk_id_employee
 
-        )
-          and service_attention.fk_id_service = P_SERVICE_ID -- getting only service attention for specific service
-        order by cast(SPLIT_PART(initial_time, ':', 1) as INTEGER);
+)
+  and service_attention.fk_id_service = P_SERVICE_ID -- getting only service attention for specific service
+order by cast(SPLIT_PART(initial_time, ':', 1) as INTEGER);
 end;
 $$
