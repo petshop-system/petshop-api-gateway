@@ -63,6 +63,9 @@ services:
 #      - DB_HOST=postgres
 #      - DB_PORT=5432
 #      - DB_TYPE=postgres
+#      - LOG_FOLDER=/app/logs/petshop-api-gateway.log
+#    volumes:
+#      - ${DEV_ENV_FOLDER}/petshop-logs:/app/logs
 #    ports:
 #      - "9999:9999"
 #    expose:

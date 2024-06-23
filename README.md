@@ -99,3 +99,4 @@ Ex.:
 * [How to Create a Reverse Proxy using Golang](https://www.codedodle.com/go-reverse-proxy-example.html)
 * [Go Simple and powerful reverse proxy](https://www.sobyte.net/post/2022-04/golang-reverse-proxy/)
 * [Why is httputil.NewSingleHostReverseProxy causing an error on some www sites?](https://stackoverflow.com/questions/31715545/why-is-httputil-newsinglehostreverseproxy-causing-an-error-on-some-www-sites)
+* [Docker - Como compartilhar dados entre o Container e o host](https://www.macoratti.net/19/04/docker_compart1.htm)

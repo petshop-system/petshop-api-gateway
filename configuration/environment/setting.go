@@ -6,6 +6,7 @@ type setting struct {
 	Application struct {
 		ContextRequest      time.Duration `envconfig:"CONTEXT_REQUEST" default:"2.1s"`
 		TickerReloadRouters time.Duration `envconfig:"TICKER_RELOAD_ROUTERS" default:"2m"`
+		LogFolder           string        `envconfig:"LOG_FOLDER" default:"./logs/petshop-api-gateway.log"`
 	}
 
 	Server struct {

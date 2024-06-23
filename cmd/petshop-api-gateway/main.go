@@ -24,11 +24,18 @@ func init() {
 		panic(err.Error())
 	}
 
+	fileName := environment.Setting.Application.LogFolder
+	logFile, err := os.Create(fileName)
+	if err != nil {
+		panic(err)
+	}
+
 	config := zap.NewProductionEncoderConfig()
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
 	jsonEncoder := zapcore.NewJSONEncoder(config)
 	core := zapcore.NewTee(
 		zapcore.NewCore(jsonEncoder, zapcore.AddSync(os.Stdout), zapcore.DebugLevel),
+		zapcore.NewCore(jsonEncoder, zapcore.AddSync(logFile), zapcore.DebugLevel),
 	)
 	logger := zap.New(core, zap.AddCaller())
 	defer logger.Sync() // flushes buffer, if any
