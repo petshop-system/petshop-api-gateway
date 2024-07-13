@@ -23,6 +23,10 @@ type Router struct {
 	ReplaceNewAppContext string
 }
 
+const (
+	HeaderRequestID = "X-Request-Id"
+)
+
 func NewServerPass(loggerSugar *zap.SugaredLogger, gatewayDB *database.GatewayDB, tickerReloadRouters time.Duration) ServeReverseProxyPass {
 	serveReverseProxyPass := ServeReverseProxyPass{
 		LoggerSugar: loggerSugar,
@@ -33,13 +37,24 @@ func NewServerPass(loggerSugar *zap.SugaredLogger, gatewayDB *database.GatewayDB
 	return serveReverseProxyPass
 }
 
+func (h *ServeReverseProxyPass) getRequestID(r *http.Request) string {
+
+	requestID := r.Header.Get(HeaderRequestID)
+	if len(requestID) == 0 {
+		random, _ := uuid.NewRandom()
+		requestID = fmt.Sprintf("%s.%d", random.String(), time.Now().UnixNano())
+	}
+
+	return requestID
+}
+
 func (h *ServeReverseProxyPass) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	partsPath := strings.Split(r.URL.Path, "/")
 	initialPath, router := h.getRouterConfigInfo(partsPath)
 
-	random, _ := uuid.NewRandom()
-	requestID := fmt.Sprintf("%s.%d", random.String(), time.Now().UnixNano())
+	requestID := h.getRequestID(r)
+
 	logger := h.LoggerSugar.With("host", r.Host, "request_method", r.Method, "request_uri", r.RequestURI, "request_url_path", r.URL.Path,
 		"initialPath", initialPath, "request_id", requestID)
 	logger.Infow("request server pass received")
@@ -83,11 +98,11 @@ func (h *ServeReverseProxyPass) buildReverseProxy(requestID string, r *http.Requ
 
 		req.RequestURI = newRequestURI
 		req.URL.Path = destination.Path
-		req.Header.Set("request_id", requestID)
+		req.Header.Set(HeaderRequestID, requestID)
 	}
 
 	rp.ModifyResponse = func(w *http.Response) error {
-		w.Header.Set("request_id", requestID)
+		w.Header.Set(HeaderRequestID, requestID)
 		return nil
 	}
 
